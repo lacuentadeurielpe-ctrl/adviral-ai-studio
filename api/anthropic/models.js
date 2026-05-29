@@ -1,0 +1,37 @@
+// api/anthropic/models.js - Proxy para listar los modelos de Anthropic en Vercel
+module.exports = async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-anthropic-key, x-api-key');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
+    if (req.method !== 'GET') {
+        res.status(405).json({ error: 'Método no permitido (usar GET)' });
+        return;
+    }
+
+    const apiKey = req.headers['x-anthropic-key'] || req.headers['x-api-key'];
+    if (!apiKey) {
+        res.status(400).json({ error: 'Falta la API Key de Anthropic en las cabeceras (x-anthropic-key)' });
+        return;
+    }
+
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/models', {
+            method: 'GET',
+            headers: {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            }
+        });
+
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el proxy de modelos de Anthropic: ' + error.message });
+    }
+};

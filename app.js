@@ -603,6 +603,14 @@ function exportProjectToPDF() {
         });
 }
 
+// Helper to route proxy calls dynamically between Local PowerShell Proxy and Vercel Serverless Functions
+function getProxyUrl(endpoint) {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `http://localhost:3000${endpoint}`;
+    }
+    return endpoint;
+}
+
 // API Connection wrapper (supports Direct & Local Proxy)
 async function callLLM(provider, payload) {
     let url = '';
@@ -611,7 +619,7 @@ async function callLLM(provider, payload) {
     };
     
     if (state.connectionMode === 'proxy') {
-        url = `http://localhost:3000/api/${provider}`;
+        url = getProxyUrl(`/api/${provider}`);
         // In proxy mode, we pass the API keys in headers so the proxy can append them
         headers['x-anthropic-key'] = state.apiKeys.anthropic;
         headers['x-deepseek-key'] = state.apiKeys.deepseek;
@@ -1637,7 +1645,7 @@ async function testAnthropicConnection() {
     };
     
     if (state.connectionMode === 'proxy') {
-        url = 'http://localhost:3000/api/anthropic/models';
+        url = getProxyUrl('/api/anthropic/models');
         headers['x-anthropic-key'] = key;
     } else {
         url = 'https://api.anthropic.com/v1/models';
@@ -1704,7 +1712,7 @@ async function testDeepSeekConnection() {
     };
     
     if (state.connectionMode === 'proxy') {
-        url = 'http://localhost:3000/api/deepseek/models';
+        url = getProxyUrl('/api/deepseek/models');
         headers['x-deepseek-key'] = key;
     } else {
         url = 'https://api.deepseek.com/models';
