@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generador inteligente de guiones y prompts optimizados para anuncios y videos virales usando IA multi-agente.">
+    <title>AdViral AI Studio - Scripting & Prompting Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for some standard icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js library for PDF exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+            <span class="logo-text">AdViral <span style="font-weight: 300; font-size: 1.2rem; opacity: 0.8;">AI Studio</span></span>
+        </div>
+        <div class="nav-controls">
+            <button id="api-config-btn" class="api-badge">
+                <i class="fa-solid fa-key"></i>
+                <span id="api-status-text">Configurar APIs</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        
+        <!-- App Views Controller -->
+        <div class="tabs-container">
+            <button id="tab-generator" class="tab-btn active"><i class="fa-solid fa-sliders"></i> Creador de Campaña</button>
+            <button id="tab-gallery" class="tab-btn"><i class="fa-solid fa-folder-open"></i> Galería de Guiones</button>
+        </div>
+
+        <!-- GENERATOR VIEW -->
+        <section id="generator-view" class="view-section">
+            <div class="dashboard-grid">
+                
+                <!-- Inputs Panel (Left) -->
+                <div class="glass-card">
+                    <h2 class="mb-2" style="font-size: 1.5rem;">Configura tu Contenido</h2>
+                    <p class="text-secondary mb-2" style="font-size: 0.9rem;">Rellena los detalles creativos y deja que los agentes de IA construyan tu estructura viral.</p>
+                    
+                    <!-- Content Type Toggle -->
+                    <div class="form-group">
+                        <label>Tipo de Contenido</label>
+                        <div class="tabs-container" style="margin-bottom: 0;">
+                            <button id="type-ad" class="tab-btn active" data-type="ad"><i class="fa-solid fa-rectangle-ad"></i> Anuncio de Conversión</button>
+                            <button id="type-viral" class="tab-btn" data-type="viral"><i class="fa-solid fa-bolt"></i> Video Viral (UGC/TikTok/POV)</button>
+                        </div>
+                    </div>
+
+                    <!-- Product & Persona Box -->
+                    <div class="form-group">
+                        <label for="input-product">Descripción de Producto & Buyer Persona</label>
+                        <textarea id="input-product" placeholder="Ej: Termo inteligente de acero inoxidable con pantalla LED de temperatura. Se dirige a profesionales jóvenes de 25-40 años que van al gimnasio y trabajan en oficinas corporativas..."></textarea>
+                    </div>
+
+                    <!-- Format & Brief Box -->
+                    <div class="form-group">
+                        <label for="input-brief">¿Qué tipo de video/anuncio quieres? (Breve descripción)</label>
+                        <textarea id="input-brief" placeholder="Ej: Un video estilo UGC dinámico mostrando la frustración de tomar café frío, y luego el alivio de ver la temperatura exacta en el termo con un hook impactante en los primeros 3 segundos. Estructura TikTok."></textarea>
+                    </div>
+
+                    <!-- Brand Tone Chips -->
+                    <div class="form-group">
+                        <label>Tono de la Marca</label>
+                        <div class="tone-chips" id="tone-chips-container">
+                            <span class="tone-chip active" data-tone="Enérgico / UGC">Enérgico / UGC</span>
+                            <span class="tone-chip" data-tone="Premium / Elegante">Premium / Elegante</span>
+                            <span class="tone-chip" data-tone="Humorístico">Humorístico</span>
+                            <span class="tone-chip" data-tone="Cinematográfico">Cinematográfico</span>
+                            <span class="tone-chip" data-tone="Inspiracional / Storytelling">Inspiracional / Storytelling</span>
+                            <span class="tone-chip" data-tone="Venta Directa / Agresivo">Venta Directa</span>
+                            <span class="tone-chip" data-tone="custom">Otro (Escribir abajo)</span>
+                        </div>
+                        <input type="text" id="input-tone-custom" class="hidden" placeholder="Ej: Sarcástico y rápido, al estilo de Deadpool...">
+                    </div>
+
+                    <!-- File Upload Grid for Continuity -->
+                    <div class="form-group">
+                        <label>Imágenes de Referencia (Continuidad del Producto)</label>
+                        <p class="text-muted mb-2" style="font-size: 0.8rem; text-transform: none; margin-top: -0.25rem;">
+                            Sube fotos de tu producto para que la IA extraiga los rasgos físicos clave y mantenga la coherencia en los prompts de Veo 3.
+                        </p>
+                        <div class="upload-zone" id="drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <div class="upload-text">Arrastra imágenes aquí o <span>selecciona archivos</span></div>
+                            <input type="file" id="file-input" class="upload-input" accept="image/*" multiple>
+                        </div>
+                        <div class="preview-grid" id="preview-container"></div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button id="generate-btn" class="btn btn-primary" style="width: 100%; height: 50px;">
+                        <i class="fa-solid fa-play"></i> Generar Guión & Prompts Pro
+                    </button>
+
+                </div>
+
+                <!-- Agent Status Log (Right) -->
+                <div class="glass-card flex-row flex-column" style="display: flex; flex-direction: column; gap: 1.5rem; justify-content: flex-start;">
+                    <div>
+                        <h3 class="mb-2" style="font-size: 1.3rem;"><i class="fa-solid fa-server text-gradient"></i> Orquestación Multi-Agente</h3>
+                        <p class="text-secondary" style="font-size: 0.85rem;">Monitoreo en tiempo real del pipeline de generación y los llamados de API.</p>
+                    </div>
+
+                    <!-- Agents Status Panel -->
+                    <div class="agents-panel">
+                        
+                        <!-- Agent 1 -->
+                        <div class="agent-node" id="agent-1-node">
+                            <div class="agent-avatar">
+                                <i class="fa-solid fa-pen-nib"></i>
+                                <div class="spinner hidden" id="spinner-agent-1"></div>
+                            </div>
+                            <div class="agent-info">
+                                <div class="agent-name">Guionista</div>
+                                <div class="agent-role">Agent 1 • Claude 3.5 Sonnet</div>
+                                <div class="agent-status" id="status-agent-1">Esperando para iniciar...</div>
+                            </div>
+                        </div>
+
+                        <!-- Agent 2 -->
+                        <div class="agent-node" id="agent-2-node">
+                            <div class="agent-avatar">
+                                <i class="fa-solid fa-clapperboard"></i>
+                                <div class="spinner hidden" id="spinner-agent-2"></div>
+                            </div>
+                            <div class="agent-info">
+                                <div class="agent-name">Director Creativo</div>
+                                <div class="agent-role">Agent 2 • Claude 3.5 Sonnet</div>
+                                <div class="agent-status" id="status-agent-2">Esperando guión...</div>
+                            </div>
+                        </div>
+
+                        <!-- Agent 3 -->
+                        <div class="agent-node" id="agent-3-node">
+                            <div class="agent-avatar">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <div class="spinner hidden" id="spinner-agent-3"></div>
+                            </div>
+                            <div class="agent-info">
+                                <div class="agent-name">Especialista en Prompts</div>
+                                <div class="agent-role">Agent 3 • DeepSeek-V3</div>
+                                <div class="agent-status" id="status-agent-3">Esperando blueprint...</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Terminal Logs -->
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-size: 0.8rem;">Logs de ejecución (Consola)</label>
+                            <button id="clear-logs-btn" class="copy-btn-mini"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+                        </div>
+                        <div class="log-terminal" id="log-terminal">
+                            <div class="log-entry info">[SISTEMA] Listo para iniciar la generación. Introduce los parámetros creativos.</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- STUDIO VIEW (RESULTS) -->
+        <section id="studio-view" class="view-section hidden">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.8rem;" class="text-gradient"><i class="fa-solid fa-film"></i> Studio de Producción</h2>
+                    <p class="text-secondary" style="font-size: 0.95rem;">Guión refinado y prompts de video con coherencia visual listos para producción.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="export-pdf-btn" class="btn btn-secondary" style="border-color: var(--secondary); color: var(--secondary);">
+                        <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+                    </button>
+                    <button id="back-to-input-btn" class="btn btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i> Nuevo Guión
+                    </button>
+                </div>
+            </div>
+
+            <div class="studio-container">
+                
+                <!-- Sidebar (Left) -->
+                <div class="studio-sidebar">
+                    
+                    <!-- Visual Continuity Blueprint -->
+                    <div class="glass-card continuity-panel">
+                        <h3 class="mb-2" style="font-size: 1.1rem; color: var(--secondary);">
+                            <i class="fa-solid fa-fingerprint"></i> Blueprint de Continuidad
+                        </h3>
+                        <p class="text-muted mb-2" style="font-size: 0.8rem; line-height: 1.4;">
+                            Rasgos de continuidad inmutables determinados por la IA para fijar los prompts de Veo 3:
+                        </p>
+                        <div id="blueprint-content" class="blueprint-meta">
+                            No se ha cargado ninguna imagen de referencia. La IA usará una descripción de producto estricta.
+                        </div>
+                        <div class="preview-grid" id="blueprint-images-container" style="margin-top: 1rem;"></div>
+                    </div>
+
+                    <!-- ElevenLabs Clean Full Script -->
+                    <div class="glass-card full-script-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <h3 style="font-size: 1.1rem; color: var(--accent);">
+                                <i class="fa-solid fa-volume-high"></i> Guión de Audio Completo
+                            </h3>
+                            <button id="copy-full-audio-btn" class="btn btn-secondary copy-btn-mini" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                                <i class="fa-solid fa-copy"></i> Copiar Guión
+                            </button>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.8rem; margin-top: -0.25rem;">
+                            Trascripción optimizada y limpia para pasar a ElevenLabs (con etiquetas de tono y pausas).
+                        </p>
+                        <div class="script-scroller" id="full-audio-content"></div>
+                    </div>
+
+                </div>
+
+                <!-- Storyboard (Right) -->
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <h3 style="font-size: 1.3rem;"><i class="fa-solid fa-table-columns"></i> Storyboard & Prompts de Escena</h3>
+                        <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; color: var(--text-secondary); text-transform: none;">
+                                <input type="checkbox" id="toggle-ref-product" style="cursor: pointer; accent-color: var(--secondary); width: 16px; height: 16px;"> 
+                                <span>Usar Ref. de <strong style="color: var(--secondary);">Producto</strong></span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; color: var(--text-secondary); text-transform: none;">
+                                <input type="checkbox" id="toggle-ref-character" style="cursor: pointer; accent-color: var(--accent); width: 16px; height: 16px;"> 
+                                <span>Usar Ref. de <strong style="color: var(--accent);">Personaje</strong></span>
+                            </label>
+                            <button id="copy-all-prompts-btn" class="btn btn-secondary copy-btn-mini">
+                                <i class="fa-solid fa-clone"></i> Copiar Todos los Prompts
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="storyboard-grid" id="storyboard-container">
+                        <!-- Scenes will be injected here dynamically -->
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- GALLERY VIEW (SAVED PROJECTS) -->
+        <section id="gallery-view" class="view-section hidden">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="font-size: 1.6rem;"><i class="fa-solid fa-clock-rotate-left"></i> Historial de Proyectos</h2>
+                    <button id="clear-gallery-btn" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                        <i class="fa-solid fa-trash"></i> Borrar Todo el Historial
+                    </button>
+                </div>
+                
+                <div id="gallery-empty-state" class="text-secondary" style="text-align: center; padding: 3rem 0;">
+                    <i class="fa-solid fa-folder-open" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                    No hay proyectos guardados todavía. Genera un guión para verlo reflejado en tu galería.
+                </div>
+
+                <div id="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+                    <!-- Saved project cards will go here -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- API CONFIG MODAL -->
+    <div class="modal-backdrop" id="api-modal">
+        <div class="modal-content">
+            <h3 class="modal-title"><i class="fa-solid fa-gears text-gradient"></i> Configurar Conexiones de API</h3>
+            <p class="text-secondary mb-2" style="font-size: 0.85rem; line-height: 1.4;">
+                Las claves de API se guardan únicamente en el almacenamiento local de tu navegador (localStorage) para mayor seguridad.
+            </p>
+
+            <!-- Proxy Settings Toggle -->
+            <div class="form-group">
+                <label>Modo de Conexión</label>
+                <select id="select-connection-mode">
+                    <option value="direct">Directa (Desde el navegador - Requiere extensión CORS)</option>
+                    <option value="proxy" selected>Proxy Local (Recomendado - Ejecuta run-proxy.ps1)</option>
+                </select>
+                <div id="proxy-warning-msg" class="text-muted" style="font-size: 0.75rem; line-height: 1.3; margin-top: 0.25rem; color: var(--warning);">
+                    <i class="fa-solid fa-circle-info"></i> El modo Proxy Local evita errores de CORS y protege tus llamadas. Abre PowerShell en este directorio y ejecuta <code>.\run-proxy.ps1</code>.
+                </div>
+            </div>
+
+            <!-- Anthropic Key -->
+            <div class="form-group">
+                <label for="api-key-anthropic">API Key Anthropic (Claude 3.5 Sonnet)</label>
+                <div style="position: relative;">
+                    <input type="password" id="api-key-anthropic" placeholder="sk-ant-...">
+                    <button class="copy-btn-mini toggle-password" style="position: absolute; right: 8px; top: 8px; height: 24px;"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+
+            <!-- Anthropic Model Selection -->
+            <div class="form-group">
+                <label for="select-anthropic-model">Modelo de Claude</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="select-anthropic-model" style="flex: 1;">
+                        <option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Recomendado)</option>
+                        <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet v1 (Jun 2024)</option>
+                        <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                        <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    </select>
+                    <button id="test-anthropic-btn" class="btn btn-secondary" style="padding: 0 0.75rem; height: 42px;" title="Verificar conexión y listar modelos disponibles"><i class="fa-solid fa-arrows-rotate"></i> Listar</button>
+                </div>
+            </div>
+
+            <!-- DeepSeek Key -->
+            <div class="form-group">
+                <label for="api-key-deepseek">API Key DeepSeek (DeepSeek-V3/R1)</label>
+                <div style="position: relative;">
+                    <input type="password" id="api-key-deepseek" placeholder="sk-...">
+                    <button class="copy-btn-mini toggle-password" style="position: absolute; right: 8px; top: 8px; height: 24px;"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+
+            <!-- DeepSeek Model Selection -->
+            <div class="form-group">
+                <label for="select-deepseek-model">Modelo de DeepSeek</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="select-deepseek-model" style="flex: 1;">
+                        <option value="deepseek-chat" selected>DeepSeek V3 (Chat / Rápido)</option>
+                        <option value="deepseek-reasoner">DeepSeek R1 (Razonamiento / Pensador)</option>
+                    </select>
+                    <button id="test-deepseek-btn" class="btn btn-secondary" style="padding: 0 0.75rem; height: 42px;" title="Verificar conexión y listar modelos disponibles"><i class="fa-solid fa-arrows-rotate"></i> Listar</button>
+                </div>
+            </div>
+
+            <!-- Supabase Integration (Optional) -->
+            <div style="border-top: 1px solid var(--border-color); margin-top: 1.2rem; padding-top: 1.2rem;">
+                <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--secondary); display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-database"></i> Base de Datos Cloud (Opcional)
+                </h4>
+                <p class="text-secondary mb-2" style="font-size: 0.75rem; line-height: 1.3; text-transform: none;">
+                    Configura Supabase para guardar tus proyectos en la nube y verlos desde cualquier PC de forma compartida.
+                </p>
+                <!-- Supabase URL -->
+                <div class="form-group">
+                    <label for="api-supabase-url">Supabase Project URL</label>
+                    <input type="text" id="api-supabase-url" placeholder="https://xxxxxxxxxxxxxx.supabase.co">
+                </div>
+                <!-- Supabase Anon Key -->
+                <div class="form-group">
+                    <label for="api-supabase-key">Supabase Anon Key</label>
+                    <div style="position: relative;">
+                        <input type="password" id="api-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                        <button class="copy-btn-mini toggle-password" style="position: absolute; right: 8px; top: 8px; height: 24px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex-row gap-2 mt-auto" style="justify-content: flex-end; margin-top: 1.5rem;">
+                <button id="api-cancel-btn" class="btn btn-secondary" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">Cancelar</button>
+                <button id="api-save-btn" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING TOAST -->
+    <div class="alert-toast" id="alert-toast">
+        <i class="fa-solid fa-circle-check"></i> <span id="alert-toast-text">Copiado al portapapeles</span>
+    </div>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 2rem 0; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); background: rgba(10,15,30,0.5);">
+        AdViral AI Studio &copy; 2026. Todos los derechos reservados. Desarrollado con 🦾 Inteligencia Artificial.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
