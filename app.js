@@ -185,14 +185,15 @@ function saveSettings() {
 
 // Update API config status button
 function updateAPIStatusBadge() {
-    const hasAnthropic = !!state.apiKeys.anthropic;
-    const hasDeepSeek = !!state.apiKeys.deepseek;
+    const isVercel = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const hasAnthropic = !!state.apiKeys.anthropic || (isVercel && state.connectionMode === 'proxy');
+    const hasDeepSeek = !!state.apiKeys.deepseek || (isVercel && state.connectionMode === 'proxy');
     
     if (hasAnthropic && hasDeepSeek) {
         elements.apiConfigBtn.style.borderColor = 'var(--success)';
         elements.apiConfigBtn.style.color = '#34d399';
         elements.apiConfigBtn.style.background = 'rgba(16, 185, 129, 0.1)';
-        elements.apiStatusText.textContent = 'APIs Conectadas';
+        elements.apiStatusText.textContent = isVercel && !state.apiKeys.anthropic ? 'APIs Vercel Activas' : 'APIs Conectadas';
     } else {
         elements.apiConfigBtn.style.borderColor = 'var(--warning)';
         elements.apiConfigBtn.style.color = 'var(--warning)';
@@ -761,7 +762,8 @@ async function startGenerationPipeline() {
         return;
     }
 
-    const hasKeys = state.apiKeys.anthropic && state.apiKeys.deepseek;
+    const isVercel = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const hasKeys = (state.apiKeys.anthropic && state.apiKeys.deepseek) || (isVercel && state.connectionMode === 'proxy');
     
     // Set Abort Controller
     abortController = new AbortController();

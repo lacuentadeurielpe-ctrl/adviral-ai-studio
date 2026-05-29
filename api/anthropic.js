@@ -15,9 +15,11 @@ module.exports = async (req, res) => {
         return;
     }
 
-    const apiKey = req.headers['x-anthropic-key'] || req.headers['x-api-key'];
+    // Priorizar llave enviada por cabecera de cliente, luego caer en variable de entorno global en Vercel
+    const apiKey = req.headers['x-anthropic-key'] || req.headers['x-api-key'] || process.env.ANTHROPIC_API_KEY;
+    
     if (!apiKey) {
-        res.status(400).json({ error: 'Falta la API Key de Anthropic en las cabeceras (x-anthropic-key)' });
+        res.status(400).json({ error: 'Falta la API Key de Anthropic. Configúrala en la UI o en las variables de entorno de Vercel (ANTHROPIC_API_KEY).' });
         return;
     }
 

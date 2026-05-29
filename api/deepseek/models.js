@@ -21,9 +21,13 @@ module.exports = async (req, res) => {
             apiKey = match[1];
         }
     }
+    
+    if (!apiKey) {
+        apiKey = process.env.DEEPSEEK_API_KEY;
+    }
 
     if (!apiKey) {
-        res.status(400).json({ error: 'Falta la API Key de DeepSeek en las cabeceras (x-deepseek-key)' });
+        res.status(400).json({ error: 'Falta la API Key de DeepSeek. Configúrala en la UI o en las variables de entorno de Vercel (DEEPSEEK_API_KEY).' });
         return;
     }
 
