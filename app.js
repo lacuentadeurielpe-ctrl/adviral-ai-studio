@@ -485,27 +485,31 @@ function handleFileSelect(e) {
     }
 }
 
-function processFiles(files) {
-    Array.from(files).forEach(file => {
+async function processFiles(files) {
+    const promises = Array.from(files).map(async (file) => {
         if (!file.type.startsWith('image/')) {
             logToTerminal(`Archivo rechazado: ${file.name} no es una imagen.`, 'warning');
             return;
         }
         
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const base64Data = e.target.result;
-            
-            state.uploadedImages.push({
-                name: file.name,
-                base64: base64Data
-            });
-            
-            renderPreviews();
-            logToTerminal(`Imagen cargada: ${file.name}`, 'info');
-        };
-        reader.readAsDataURL(file);
+        const base64Data = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+        
+        logToTerminal(`Optimizando imagen: ${file.name}...`, 'info');
+        const optimizedBase64 = await compressImageAsync(base64Data, 1024, 1024, 0.75);
+        
+        state.uploadedImages.push({
+            name: file.name,
+            base64: optimizedBase64
+        });
+        logToTerminal(`Imagen cargada y optimizada: ${file.name}`, 'info');
     });
+    
+    await Promise.all(promises);
+    renderPreviews();
 }
 
 function renderPreviews() {
@@ -658,7 +662,7 @@ async function callLLM(provider, payload) {
 }
 
 // Helper: Compress Base64 Image to lightweight thumbnail (Max 250px) to prevent LocalStorage QuotaExceededError
-function compressImageAsync(base64Str, maxWidth = 250, maxHeight = 250) {
+function compressImageAsync(base64Str, maxWidth = 250, maxHeight = 250, quality = 0.6) {
     return new Promise((resolve) => {
         const img = new Image();
         img.src = base64Str;
@@ -683,8 +687,8 @@ function compressImageAsync(base64Str, maxWidth = 250, maxHeight = 250) {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            // Export as JPEG with 0.6 quality for minimal size (a few KB)
-            resolve(canvas.toDataURL('image/jpeg', 0.6));
+            // Export as JPEG with configured quality (default 0.6)
+            resolve(canvas.toDataURL('image/jpeg', quality));
         };
         img.onerror = () => {
             resolve(base64Str); // Fallback to original
