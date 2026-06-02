@@ -75,11 +75,14 @@ while ($listener.IsListening) {
             if ([string]::IsNullOrEmpty($apiKey)) {
                 $apiKey = $request.Headers["x-api-key"]
             }
+            if ([string]::IsNullOrEmpty($apiKey)) {
+                $apiKey = $env:ANTHROPIC_API_KEY
+            }
 
             if ([string]::IsNullOrEmpty($apiKey)) {
                 $response.StatusCode = 400
                 $response.ContentType = "application/json"
-                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error": "Falta la API Key de Anthropic en las cabeceras de AdViral (x-anthropic-key)"}')
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error": "Falta la API Key de Anthropic. Configúrala en la UI o como variable de entorno ANTHROPIC_API_KEY."}')
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
                 $response.Close()
                 continue
@@ -145,11 +148,14 @@ while ($listener.IsListening) {
                     $apiKey = $Matches[1]
                 }
             }
+            if ([string]::IsNullOrEmpty($apiKey)) {
+                $apiKey = $env:DEEPSEEK_API_KEY
+            }
 
             if ([string]::IsNullOrEmpty($apiKey)) {
                 $response.StatusCode = 400
                 $response.ContentType = "application/json"
-                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error": "Falta la API Key de DeepSeek en las cabeceras de AdViral (x-deepseek-key)"}')
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error": "Falta la API Key de DeepSeek. Configúrala en la UI o como variable de entorno DEEPSEEK_API_KEY."}')
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
                 $response.Close()
                 continue
