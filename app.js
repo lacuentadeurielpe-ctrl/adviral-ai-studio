@@ -11,7 +11,7 @@ const state = {
         url: 'https://gvhjvvcmtuttacxlsyip.supabase.co',
         key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2aGp2dmNtdHV0dGFjeGxzeWlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5ODc4MjEsImV4cCI6MjA5NTU2MzgyMX0.DcTQde81lBSL6KHn_wUnlpLESwMi0GwH3nxvkvn9ESI'
     },
-    anthropicModel: 'claude-3-5-sonnet-20241022',
+    anthropicModel: 'claude-3-5-sonnet-latest',
     deepseekModel: 'deepseek-chat',
     contentType: 'ad', // 'ad' or 'viral'
     selectedTone: 'Enérgico / UGC',
@@ -133,14 +133,8 @@ function loadSettings() {
 
     const antModel = localStorage.getItem('adviral_ant_model');
     if (antModel && elements.selectAnthropicModel) {
-        if (antModel === 'claude-3-5-sonnet-latest') {
-            state.anthropicModel = 'claude-3-5-sonnet-20241022';
-            elements.selectAnthropicModel.value = 'claude-3-5-sonnet-20241022';
-            localStorage.setItem('adviral_ant_model', 'claude-3-5-sonnet-20241022');
-        } else {
-            state.anthropicModel = antModel;
-            elements.selectAnthropicModel.value = antModel;
-        }
+        state.anthropicModel = antModel;
+        elements.selectAnthropicModel.value = antModel;
     }
 
     const dsModel = localStorage.getItem('adviral_ds_model');
@@ -245,18 +239,16 @@ async function loadHistory() {
     if (hasSupabase) {
         logToTerminal('[Base de Datos] Cargando historial desde Supabase...', 'info');
         try {
-            const data = await callSupabase('GET', 'projects?select=*&order=id.desc');
+            const data = await callSupabase('GET', 'projects?select=id,timestamp,product,brief,tone&order=id.desc');
             if (data && Array.isArray(data)) {
                 state.savedProjects = data.map(item => ({
                     id: item.id,
                     timestamp: item.timestamp || new Date(item.created_at).toLocaleString(),
                     product: item.product,
                     brief: item.brief,
-                    tone: item.tone,
-                    images: Array.isArray(item.images) ? item.images : (item.images ? JSON.parse(item.images) : []),
-                    project: typeof item.project === 'string' ? JSON.parse(item.project) : item.project
+                    tone: item.tone
                 }));
-                logToTerminal(`[Base de Datos] ${state.savedProjects.length} proyectos cargados desde Supabase.`, 'success');
+                logToTerminal(`[Base de Datos] ${state.savedProjects.length} proyectos cargados (sólo metadatos) desde Supabase.`, 'success');
             } else {
                 state.savedProjects = [];
             }
@@ -1410,8 +1402,6 @@ function renderGallery() {
         card.style.flexDirection = 'column';
         card.style.gap = '1rem';
         
-        let typeBadge = proj.project.scenes ? `${proj.project.scenes.length} Escenas` : '';
-        
         card.innerHTML = `
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -1438,12 +1428,27 @@ function renderGallery() {
             </div>
         `;
         
-        card.querySelector('.load-project-btn').addEventListener('click', () => {
-            state.currentProject = proj.project;
-            // Restore images associated with this project (the thumbnails)
-            state.currentProject.images = proj.images || [];
-            renderStudioView();
-            switchView('studio');
+        card.querySelector('.load-project-btn').addEventListener('click', async () => {
+            logToTerminal(`[Base de Datos] Solicitando detalles del proyecto ID ${proj.id}...`, 'info');
+            showToast('Cargando campaña de la nube...');
+            try {
+                const data = await callSupabase('GET', `projects?id=eq.${proj.id}`);
+                if (data && data.length > 0) {
+                    const item = data[0];
+                    const fullProject = typeof item.project === 'string' ? JSON.parse(item.project) : item.project;
+                    state.currentProject = fullProject;
+                    state.currentProject.images = Array.isArray(item.images) ? item.images : (item.images ? JSON.parse(item.images) : []);
+                    
+                    logToTerminal('[Base de Datos] Campaña cargada de forma completa y segura.', 'success');
+                    renderStudioView();
+                    switchView('studio');
+                } else {
+                    throw new Error('El proyecto no existe en la base de datos.');
+                }
+            } catch (err) {
+                logToTerminal(`[Base de Datos] [ERROR] No se pudo cargar: ${err.message}`, 'warning');
+                showToast('Error al descargar proyecto.', true);
+            }
         });
         
         card.querySelector('.delete-project-btn').addEventListener('click', (e) => {
